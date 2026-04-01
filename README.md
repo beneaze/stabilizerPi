@@ -28,23 +28,38 @@ scripts/
 
 > The PWM frequency is ~30 kHz (125 MHz / 4096). A simple RC filter will remove the PWM ripple while preserving the ~1 kHz control bandwidth.
 
-## RF chain
+## System diagram
 
-```
-                              Pi Pico
-                            ┌─────────┐
-                            │  PWM out │
-                            └────┬─────┘
-                                 │ DC (0–3.3 V)
-                                 │ via RC filter
-                                 ▼ IF
-┌──────────┐   ┌────────────┐   ┌───────┐   ┌─────────────┐   ┌─────────────┐   ┌────────────┐   ┌─────────────┐   ┌─────┐
-│ RF input │──▶│ TTL switch │──▶│ Mixer │──▶│  Bandpass    │──▶│ Pre-amp     │──▶│ Amplifier  │──▶│  Bandpass   │──▶│ AOM │
-│ 80 MHz   │   │            │   │       │   │ 63–77 MHz   │   │ +20 dB      │   │ +25 dB     │   │ 63–77 MHz  │   │     │
-└──────────┘   └────────────┘   └───────┘   └─────────────┘   └─────────────┘   └────────────┘   └─────────────┘   └─────┘
+```mermaid
+flowchart LR
+    LASER([Laser]) -->|beam| AOM[AOM]
+    AOM -->|beam| PICK{Pickoff}
+    PICK -->|main beam| EXP([To experiment])
+    PICK -->|sample| PD[Photodiode]
+
+    PD -->|voltage| PICO["Pi Pico\nADC → PID → PWM"]
+    PICO --> RC["RC low-pass\nfilter"]
+
+    RF["RF source\n80 MHz"] --> TTL["TTL switch"]
+    TTL -->|RF| MIX["Mixer"]
+    RC -->|"IF (DC)"| MIX
+    MIX --> BPF1["Bandpass\n63–77 MHz"]
+    BPF1 --> PRE["Pre-amp\n+20 dB"]
+    PRE --> AMP["Amplifier\n+25 dB"]
+    AMP --> BPF2["Bandpass\n63–77 MHz"]
+    BPF2 -->|RF drive| AOM
+
+    style LASER fill:#d32f2f,color:#fff
+    style AOM fill:#ff9800,color:#fff
+    style PD fill:#4caf50,color:#fff
+    style PICO fill:#1565c0,color:#fff
+    style RF fill:#7b1fa2,color:#fff
+    style EXP fill:#607d8b,color:#fff
 ```
 
-The Pico's filtered PWM output provides a DC voltage that feeds the mixer's IF port, controlling the RF amplitude that ultimately reaches the AOM. The two bandpass filters (63–77 MHz) reject harmonics and out-of-band noise introduced by the mixer and amplifiers.
+**Optical loop:** The laser passes through the AOM, a pickoff sends a sample to the photodiode, the Pico reads the photodiode voltage and closes the feedback loop by adjusting the AOM drive level.
+
+**RF drive chain:** An 80 MHz source enters a TTL switch, then a mixer whose IF port receives the Pico's DC control voltage. The mixed signal passes through a bandpass filter (63–77 MHz), a pre-amplifier (+20 dB), a power amplifier (+25 dB), a second bandpass filter (63–77 MHz), and finally drives the AOM.
 
 ## Building the firmware
 
