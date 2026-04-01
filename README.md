@@ -28,6 +28,24 @@ scripts/
 
 > The PWM frequency is ~30 kHz (125 MHz / 4096). A simple RC filter will remove the PWM ripple while preserving the ~1 kHz control bandwidth.
 
+## RF chain
+
+```
+                              Pi Pico
+                            ┌─────────┐
+                            │  PWM out │
+                            └────┬─────┘
+                                 │ DC (0–3.3 V)
+                                 │ via RC filter
+                                 ▼ IF
+┌──────────┐   ┌────────────┐   ┌───────┐   ┌─────────────┐   ┌─────────────┐   ┌────────────┐   ┌─────────────┐   ┌─────┐
+│ RF input │──▶│ TTL switch │──▶│ Mixer │──▶│  Bandpass    │──▶│ Pre-amp     │──▶│ Amplifier  │──▶│  Bandpass   │──▶│ AOM │
+│ 80 MHz   │   │            │   │       │   │ 63–77 MHz   │   │ +20 dB      │   │ +25 dB     │   │ 63–77 MHz  │   │     │
+└──────────┘   └────────────┘   └───────┘   └─────────────┘   └─────────────┘   └────────────┘   └─────────────┘   └─────┘
+```
+
+The Pico's filtered PWM output provides a DC voltage that feeds the mixer's IF port, controlling the RF amplitude that ultimately reaches the AOM. The two bandpass filters (63–77 MHz) reject harmonics and out-of-band noise introduced by the mixer and amplifiers.
+
 ## Building the firmware
 
 You need the [Raspberry Pi Pico C SDK](https://github.com/raspberrypi/pico-sdk) installed and `PICO_SDK_PATH` set.
