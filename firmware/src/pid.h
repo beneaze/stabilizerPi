@@ -17,6 +17,7 @@ void  pid_init(pid_state_t *pid, float kp, float ki, float kd,
 
 void  pid_reset(pid_state_t *pid);
 
-float pid_update(pid_state_t *pid, float setpoint, float measurement, float dt);
+float pid_update(pid_state_t *pid, float setpoint, float measurement, float dt,
+                 float error_sign);
 
 #endif // PID_H

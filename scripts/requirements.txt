@@ -1,2 +1,5 @@
 pyserial>=3.5
 matplotlib>=3.7
+numpy>=1.24
+ipywidgets>=8.0
+jupyter>=1.0
